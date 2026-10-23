@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="RuneTarot: draw from the Rider-Waite-Smith tarot and cast an Elder Futhark rune to clarify each card. Free, private, and kept on your own device.">
+<meta name="theme-color" content="#130e1b">
+<meta property="og:title" content="RuneTarot">
+<meta property="og:description" content="Tarot spreads with a clarifying rune for every card.">
+<meta property="og:image" content="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<title>RuneTarot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=IM+Fell+English+SC&family=Noto+Sans+Runic&family=Noto+Sans+Symbols&family=Noto+Sans+Symbols+2&family=Noto+Serif+Hebrew&display=swap">
+<style>
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+
+/* Layout: a reading table. Controls along the top, the spread laid on violet velvet, the reading open beside it like a grimoire page. Single dark look by design. */
+:root{
+  --night:#130e1b; --velvet:#1d1527; --velvet-2:#2a1f38; --line:#463a58;
+  --silver:#d6d2e2; --silver-dim:#9b94ae; --white:#f2eff8;
+  --parchment:#e6d7b6; --parchment-deep:#c4a97c; --ink:#2a1c12; --ink-soft:#5c4532; --rubric:#7a2430;
+  --stone-hi:#8e8899; --stone-lo:#2c2833;
+  --f-display:"IM Fell English SC","EB Garamond",Georgia,serif;
+  --f-body:"EB Garamond",Georgia,"Times New Roman",serif;
+  --f-rune:"Noto Sans Runic","Segoe UI Historic","Noto Sans",serif;
+  --f-sym:"Noto Sans Symbols","Noto Sans Symbols 2","Segoe UI Symbol",serif;
+  color-scheme:dark;
+}
+html,body{min-height:100%}
+body{background:radial-gradient(ellipse 120% 70% at 50% 0%,var(--velvet-2),var(--night) 70%) var(--night);color:var(--silver);font-family:var(--f-body);font-size:18px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+header{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;margin-bottom:26px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(42px,7vw,66px);letter-spacing:.08em;margin:0;line-height:1;color:var(--white)}
+.runeline{font-family:var(--f-rune);letter-spacing:.45em;color:var(--silver-dim);font-size:18px;margin:0}
+.tag{font-style:italic;color:var(--silver-dim);margin:0;text-wrap:balance}
+h2,h3{text-wrap:balance}
+.label,.seg legend,.eyebrow{font-family:var(--f-display);font-size:14px;letter-spacing:.14em;color:var(--silver-dim);margin:0}
+
+/* controls */
+.controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 24px;align-items:end;padding:18px;border:1px solid var(--line);background:var(--velvet);border-radius:4px}
+.q{grid-column:1/-1;display:flex;flex-direction:column;gap:6px}
+.q label span{font-family:var(--f-body);font-style:italic;letter-spacing:0;text-transform:none}
+textarea{font:inherit;font-size:18px;color:var(--white);background:var(--night);border:1px solid var(--line);border-radius:3px;padding:10px 12px;resize:vertical;min-height:52px}
+textarea::placeholder{color:var(--silver-dim);font-style:italic}
+textarea:focus-visible{outline:2px solid var(--silver-dim);outline-offset:1px}
+.opts{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;min-width:0}
+.seg{border:0;padding:0;margin:0;min-width:0}
+.seg legend{padding:0;margin-bottom:6px}
+.segrow{display:flex;flex-wrap:wrap;gap:6px}
+.seg input{position:absolute;opacity:0;width:1px;height:1px}
+.seg label{border:1px solid var(--line);padding:5px 12px;border-radius:3px;cursor:pointer;color:var(--silver)}
+.seg input:checked+label{background:var(--velvet-2);border-color:var(--silver-dim);color:var(--white)}
+.seg input:focus-visible+label{outline:2px solid var(--silver);outline-offset:2px}
+.toggles{display:flex;flex-wrap:wrap;gap:6px 18px}
+.toggles label{display:flex;align-items:center;gap:8px;cursor:pointer}
+.toggles input{accent-color:var(--silver);width:18px;height:18px}
+button{font:inherit;cursor:pointer}
+.draw{font-family:var(--f-display);font-size:19px;letter-spacing:.1em;background:var(--silver);color:var(--night);border:0;padding:12px 22px;border-radius:3px}
+.draw:hover{background:var(--white)}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--silver);font-family:var(--f-display);font-size:15px;letter-spacing:.08em;padding:6px 12px;border-radius:3px}
+.ghost:hover{border-color:var(--silver-dim);color:var(--white)}
+button:focus-visible{outline:2px solid var(--silver);outline-offset:3px}
+
+/* table */
+.table{display:grid;gap:28px;margin-top:28px}
+@media (min-width:1000px){.table{grid-template-columns:minmax(0,1fr) 370px}}
+.spread-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.spread-head h2{font-family:var(--f-display);font-weight:400;font-size:24px;letter-spacing:.06em;margin:0;color:var(--white)}
+.asked{font-style:italic;color:var(--silver-dim);margin:0 0 18px;min-height:1.5em}
+
+.spread{display:flex;flex-wrap:wrap;justify-content:center;gap:22px;--cw:clamp(92px,24vw,150px)}
+.spread.one{--cw:clamp(140px,42vw,200px)}
+.spread.cross{display:grid;grid-template-columns:repeat(4,var(--cw));grid-template-areas:". p5 . p10" "p4 p1 p6 p9" ". p2 . p8" ". p3 . p7";justify-content:center;gap:12px 18px;--cw:clamp(72px,11vw,104px)}
+.cross .p1{grid-area:p1}.cross .p2{grid-area:p2}.cross .p3{grid-area:p3}.cross .p4{grid-area:p4}.cross .p5{grid-area:p5}
+.cross .p6{grid-area:p6}.cross .p7{grid-area:p7}.cross .p8{grid-area:p8}.cross .p9{grid-area:p9}.cross .p10{grid-area:p10}
+@media (max-width:640px){
+  .spread.cross{grid-template-columns:repeat(3,var(--cw));grid-template-areas:none;--cw:27vw}
+  .cross .slot{grid-area:auto}
+}
+
+.slot{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;width:var(--cw)}
+.slot:focus-visible .face{outline:2px solid var(--silver);outline-offset:3px}
+.pos{font-family:var(--f-display);font-size:13px;letter-spacing:.1em;color:var(--silver-dim);text-align:center;line-height:1.2;min-height:2.4em;display:flex;align-items:flex-end}
+.card{position:relative;width:var(--cw);aspect-ratio:7/12;max-width:100%;perspective:900px}
+.flip{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .75s cubic-bezier(.2,.7,.2,1)}
+.card.up .flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:calc(var(--cw)*.06);overflow:hidden;box-shadow:0 8px 20px rgba(0,0,0,.55)}
+.slot.sel .face{box-shadow:0 0 0 2px var(--silver),0 0 26px rgba(214,210,226,.35)}
+.slot:hover .back{filter:brightness(1.12)}
+
+.back{background:radial-gradient(ellipse at 50% 50%,#3d2c55 0,var(--velvet-2) 42%,#140d1e 100%)}
+.back svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.back .ln{fill:none;stroke:var(--silver-dim);stroke-width:1.2}
+.back .ln2{fill:none;stroke:var(--silver-dim);stroke-width:.6;opacity:.8}
+.back .fl{fill:var(--silver-dim)}
+.back .spark{fill:var(--silver);opacity:.75}
+.back .ring{font-family:var(--f-rune);font-size:13px;fill:var(--silver-dim)}
+.back .dagaz{font-family:var(--f-rune);font-size:104px;fill:var(--silver);filter:drop-shadow(0 0 6px rgba(214,210,226,.5))}
+
+/* sky and sigil behind everything */
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.sigil{position:fixed;left:50%;top:50%;width:min(92vw,780px);aspect-ratio:1;transform:translate(-50%,-50%);z-index:0;pointer-events:none;opacity:.085}
+.sigil *{fill:none;stroke:var(--silver);stroke-width:1.4}
+.sigil text{fill:var(--silver);stroke:none;font-family:"Noto Serif Hebrew","Times New Roman",serif}
+.wrap{position:relative;z-index:1}
+
+/* toolbar */
+.toolbar{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;align-items:center;margin-bottom:6px}
+.tool{display:flex;align-items:center;gap:8px;background:var(--velvet);border:1px solid var(--line);color:var(--silver);font-family:var(--f-display);font-size:15px;letter-spacing:.08em;padding:7px 14px;border-radius:3px}
+.tool:hover{border-color:var(--silver-dim);color:var(--white)}
+.tool[aria-pressed="true"]{border-color:var(--silver-dim);background:var(--velvet-2);color:var(--white)}
+.tool svg{width:16px;height:16px;fill:currentColor}
+.vol{display:flex;align-items:center;gap:6px;color:var(--silver-dim);font-size:15px}
+.vol input{accent-color:var(--silver);width:96px}
+.fullread{border-top:1px solid var(--line);padding-top:10px}
+.fullread summary{cursor:pointer;font-family:var(--f-display);letter-spacing:.1em;font-size:14px;color:var(--silver-dim);list-style:none;display:flex;align-items:center;gap:8px}
+.fullread summary::-webkit-details-marker{display:none}
+.fullread summary::before{content:"▸";transition:transform .2s}
+.fullread[open] summary::before{transform:rotate(90deg)}
+.fullread p{margin:10px 0 0;color:var(--silver)}
+.fullread p.lead{color:var(--white)}
+.fullread b{font-family:var(--f-display);font-weight:400;letter-spacing:.08em;color:var(--silver-dim)}
+.notes{margin-top:26px;display:flex;flex-direction:column;gap:6px;max-width:760px;margin-inline:auto}
+.notes textarea{min-height:84px}
+.saved{font-size:15px;color:var(--silver-dim);font-style:italic;min-height:1.4em;margin:0}
+
+.front{transform:rotateY(180deg);color:var(--ink);background-color:var(--parchment);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .32 0 0 0 0 .22 0 0 0 0 .1 0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),radial-gradient(ellipse at 38% 28%,#f4ead2 0%,var(--parchment) 48%,var(--parchment-deep) 100%)}
+.inner{position:absolute;inset:5.5%;border:1px solid var(--ink-soft);box-shadow:inset 0 0 0 3px var(--parchment),inset 0 0 0 4px var(--ink-soft);display:flex;flex-direction:column;align-items:center;padding:7% 5% 6%;gap:3%}
+.rev .inner{transform:rotate(180deg)}
+.num{font-family:var(--f-display);font-size:calc(var(--cw)*.105);line-height:1;letter-spacing:.06em}
+.art{flex:1;width:100%;display:flex;align-items:center;justify-content:center;min-height:0}
+.glyph{font-family:var(--f-sym);font-size:calc(var(--cw)*.44);line-height:1;color:var(--ink)}
+.name{font-family:var(--f-display);font-size:calc(var(--cw)*.083);text-align:center;line-height:1.1;border-top:1px solid var(--ink-soft);padding-top:5%;width:100%}
+.suit svg{stroke:var(--ink);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block}
+.suit .f{fill:rgba(122,36,48,.16)}
+.pips{display:flex;flex-wrap:wrap;justify-content:center;align-content:center;width:88%;height:94%}
+.pip{width:calc(100% / var(--cols));height:calc(100% / var(--rows));display:flex;align-items:center;justify-content:center}
+.pip svg{height:86%;width:auto;max-width:92%}
+.ace{height:100%;display:flex;align-items:center;justify-content:center}
+.ace svg{height:78%;width:auto;max-width:80%}
+.court{display:flex;flex-direction:column;align-items:center;gap:calc(var(--cw)*.03)}
+.court .piece{font-family:var(--f-sym);font-size:calc(var(--cw)*.24);line-height:1}
+.court .suit svg{height:calc(var(--cw)*.5);width:auto;max-width:calc(var(--cw)*.6)}
+.card{aspect-ratio:300/527}
+.front:has(.img){background:#120c08}
+.inner.img{padding:0;inset:0;border:0;box-shadow:none}
+.inner.img img{width:100%;height:100%;object-fit:cover;display:block}
+.dimg{display:flex;gap:16px;align-items:flex-start}
+.dimg img{width:118px;flex:none;border-radius:6px;box-shadow:0 8px 20px rgba(0,0,0,.55)}
+.dimg.rev img{transform:rotate(180deg)}
+.dimg > div{min-width:0;display:flex;flex-direction:column;gap:6px}
+
+.mini{height:30px;display:grid;place-items:center;font-family:var(--f-rune);font-size:20px;color:var(--white)}
+.mini span{display:grid;place-items:center;width:26px;height:30px;border-radius:46% 46% 42% 42%/52% 52% 40% 40%;background:radial-gradient(circle at 35% 30%,var(--stone-hi),#4d4757 60%,var(--stone-lo))}
+.mini span.merk b{transform:rotate(180deg)}
+.mini b{font-weight:400;display:block}
+
+/* detail */
+.detail{border:1px solid var(--line);background:var(--velvet);padding:22px;border-radius:4px;align-self:start;display:flex;flex-direction:column;gap:10px;min-width:0}
+@media (min-width:1000px){.detail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}}
+.dt{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.1;margin:0;color:var(--white)}
+.arc{margin:0;color:var(--silver-dim);font-style:italic}
+.keys{margin:0;font-family:var(--f-display);letter-spacing:.06em;font-size:16px;color:var(--silver)}
+.mean{margin:0;font-size:19px;color:var(--white)}
+.alt{margin:0;color:var(--silver-dim);font-size:16px}
+.alt span{font-family:var(--f-display);letter-spacing:.08em}
+.muted{color:var(--silver-dim)}
+.runebox{margin-top:8px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.cast{font-family:var(--f-display);font-size:17px;letter-spacing:.08em;background:transparent;color:var(--white);border:1px solid var(--silver-dim);padding:10px 16px;border-radius:3px;align-self:flex-start;display:flex;align-items:center;gap:10px}
+.cast:hover{background:var(--velvet-2)}
+.cast i{font-style:normal;font-family:var(--f-rune);font-size:22px}
+.rune-row{display:flex;gap:16px;align-items:center}
+.stone{flex:none;width:70px;height:82px;border-radius:46% 46% 42% 42%/52% 52% 40% 40%;background:radial-gradient(circle at 35% 30%,var(--stone-hi),#4d4757 60%,var(--stone-lo));display:grid;place-items:center;box-shadow:inset -4px -6px 10px rgba(0,0,0,.45),0 6px 14px rgba(0,0,0,.5)}
+.stone b{font-weight:400;font-family:var(--f-rune);font-size:44px;line-height:1;color:var(--white);text-shadow:0 1px 0 rgba(0,0,0,.6)}
+.stone.merk b{transform:rotate(180deg)}
+.stone.cast-in{animation:cast .6s ease-out}
+@keyframes cast{0%{transform:translateY(-34px) rotate(-28deg);opacity:0}60%{transform:translateY(4px) rotate(6deg);opacity:1}100%{transform:none;opacity:1}}
+.rune-row h3{font-family:var(--f-display);font-weight:400;font-size:24px;margin:0;color:var(--white);line-height:1.1}
+.rune-row h3 small{font-family:var(--f-body);font-style:italic;font-size:16px;color:var(--silver-dim);letter-spacing:0}
+.rw{margin:2px 0 0;color:var(--silver-dim);font-style:italic}
+.rtext{margin:0;color:var(--white)}
+.focus{margin:0;padding:10px 14px;border-left:2px solid var(--silver-dim);background:var(--velvet-2);color:var(--silver)}
+
+/* journal drawer */
+.scrim{position:fixed;inset:0;background:rgba(8,5,12,.6);z-index:20}
+.journal{position:fixed;top:0;right:0;bottom:0;width:min(470px,100%);z-index:21;background:var(--night);border-left:1px solid var(--line);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,.5);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.jhead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+.jhead h2{font-family:var(--f-display);font-weight:400;font-size:26px;letter-spacing:.06em;margin:0;color:var(--white)}
+.jlist{flex:1;overflow-y:auto;padding:8px 20px 20px;list-style:none;margin:0}
+.jentry{border-bottom:1px solid var(--line);padding:16px 0;display:flex;flex-direction:column;gap:8px}
+.jentry.current{border-left:2px solid var(--silver-dim);padding-left:12px;margin-left:-14px}
+.jdate{color:var(--silver-dim);font-size:15px;font-variant-numeric:tabular-nums;display:flex;justify-content:space-between;gap:8px}
+.jentry input[type=text]{font:inherit;font-style:italic;color:var(--white);background:transparent;border:0;border-bottom:1px dashed var(--line);padding:2px 0;width:100%}
+.jentry input[type=text]:focus-visible{outline:none;border-bottom-color:var(--silver-dim)}
+.jentry textarea{font-size:16px;min-height:60px}
+.jcards{color:var(--silver);font-size:16px;margin:0}
+.jcards .r{font-family:var(--f-rune);color:var(--white)}
+.jactions{display:flex;gap:8px;flex-wrap:wrap}
+.danger{border-color:#6b3040;color:#e3b6bf}
+.danger:hover{border-color:#a04a5e;color:#f3d3da}
+.jfoot{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.empty{color:var(--silver-dim);font-style:italic;margin:18px 0 0}
+.credit{position:relative;z-index:1;text-align:center;color:var(--silver-dim);font-size:14px;font-style:italic;padding:0 max(16px,env(safe-area-inset-right,0px)) 28px max(16px,env(safe-area-inset-left,0px));text-wrap:balance}
+
+@media (max-width:640px){.controls{grid-template-columns:1fr}.draw{width:100%}}
+@media (prefers-reduced-motion:reduce){.flip{transition:none}.stone.cast-in{animation:none}}
+</style>
+</head>
+<body>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<svg class="sigil" viewBox="0 0 400 400" aria-hidden="true">
+  <circle cx="200" cy="200" r="194"/><circle cx="200" cy="200" r="182" style="stroke-width:.8"/>
+  <path d="M200 24L303.5 342.4L32.6 145.6H367.4L96.5 342.4Z"/>
+  <circle cx="200" cy="200" r="64" style="stroke-width:.8"/>
+  <text x="200" y="204" font-size="46" text-anchor="middle" dominant-baseline="central">אדם</text>
+  <text x="312" y="164" font-size="30" text-anchor="middle" dominant-baseline="central">י</text>
+  <text x="269" y="294" font-size="30" text-anchor="middle" dominant-baseline="central">ה</text>
+  <text x="131" y="294" font-size="30" text-anchor="middle" dominant-baseline="central">ו</text>
+  <text x="88" y="164" font-size="30" text-anchor="middle" dominant-baseline="central">ה</text>
+  <circle cx="200" cy="84" r="5"/>
+</svg>
+<div class="wrap">
+  <div class="toolbar">
+    <button type="button" class="tool" id="journalBtn" aria-haspopup="dialog">Journal</button>
+    <button type="button" class="tool" id="fireBtn" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c1 4 5 6 5 11a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3-1-3 0-6 1-9.5z"/></svg><span id="fireLabel">Hearth off</span></button>
+    <label class="vol" for="fireVol">Volume <input type="range" id="fireVol" min="0" max="100" value="55"></label>
+  </div>
+  <header>
+    <h1>RuneTarot</h1>
+    <p class="runeline" aria-hidden="true">ᚱᚢᚾᛖ · ᛏᚨᚱᛟᛏ</p>
+    <p class="tag">Draw from the seventy-eight, then cast a rune to narrow what a card is saying.</p>
+  </header>
+
+  <form class="controls" id="controls">
+    <div class="q">
+      <label class="label" for="question">YOUR QUESTION <span>(optional)</span></label>
+      <textarea id="question" rows="2" placeholder="What do I need to know about…"></textarea>
+    </div>
+    <div class="opts">
+      <fieldset class="seg">
+        <legend>SPREAD</legend>
+        <div class="segrow">
+          <input type="radio" name="spread" id="sp-one" value="one"><label for="sp-one">One card</label>
+          <input type="radio" name="spread" id="sp-three" value="three" checked><label for="sp-three">Past · Present · Future</label>
+          <input type="radio" name="spread" id="sp-cross" value="cross"><label for="sp-cross">Celtic Cross</label>
+        </div>
+      </fieldset>
+      <div class="toggles">
+        <label><input type="checkbox" id="optRev"> Card reversals</label>
+        <label><input type="checkbox" id="optMerk"> Rune reversals</label>
+        <label><input type="checkbox" id="optWyrd"> Include the blank rune</label>
+      </div>
+    </div>
+    <button type="submit" class="draw" id="drawBtn">Shuffle and draw</button>
+  </form>
+
+  <main class="table">
+    <section>
+      <div class="spread-head">
+        <h2 id="spreadTitle">Past · Present · Future</h2>
+        <button type="button" class="ghost" id="turnAll">Turn all</button>
+      </div>
+      <p class="asked" id="asked"></p>
+      <div id="spread" class="spread three"></div>
+      <div class="notes">
+        <label class="label" for="notes">NOTES ON THIS READING</label>
+        <textarea id="notes" rows="3" placeholder="What you felt, how the cards connect, what came true…"></textarea>
+        <p class="saved" id="savedMsg"></p>
+      </div>
+    </section>
+    <aside id="detail" class="detail" aria-live="polite"></aside>
+  </main>
+
+</div>
+
+<footer class="credit">Card art: the Rider-Waite-Smith deck, illustrated by Pamela Colman Smith (1909), public domain. Readings and journal stay on your own device.</footer>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="journal" id="journal" role="dialog" aria-modal="true" aria-labelledby="jTitle" hidden>
+  <div class="jhead">
+    <h2 id="jTitle">Journal</h2>
+    <button type="button" class="ghost" id="jClose">Close</button>
+  </div>
+  <ol class="jlist" id="jlist"></ol>
+  <div class="jfoot">
+    <span class="muted" id="jCount"></span>
+    <button type="button" class="ghost danger" id="clearHist">Clear all</button>
+  </div>
+</aside>
+
+<script src="deep.js"></script>
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const rnd=n=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const T="︎";
+// Rider-Waite-Smith card images (1909, Pamela Colman Smith), aged and edge-burnt. The offline build embeds them in window.RT_IMAGES.
+const IMAGE_DIR="cards/";
+const imgSrc=id=>(window.RT_IMAGES&&window.RT_IMAGES[id])||(IMAGE_DIR+id+".jpg");
+
+const ROMAN=["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"];
+const MAJ=[
+["The Fool","🜁","beginnings, faith, the leap","A fresh start that asks for trust more than a plan. Step out with open hands.","Recklessness, or fear that keeps you at the cliff edge. Either look before the leap or admit you are stalling."],
+["The Magician","☿","will, skill, manifestation","Everything you need is already on the table. Focus it and act.","Scattered energy, untapped skill, or someone manipulating the situation."],
+["The High Priestess","☽","intuition, the hidden, inner knowing","The answer sits beneath the surface. Be still and listen to what you already know.","Ignoring your intuition, secrets kept from you, or noise drowning out the inner voice."],
+["The Empress","♀","abundance, creation, nurture","Fertile ground of every kind: art, work, home. Let things grow at their own pace.","Creative block, over-giving, or neglecting your own care."],
+["The Emperor","♈","structure, authority, protection","Order and firm boundaries. Build the wall that keeps what matters safe.","Rigidity and control, or a structure that has turned into a cage."],
+["The Hierophant","♉","tradition, teaching, institutions","Learned wisdom, ritual, a mentor or a system with its own rules.","Questioning dogma, breaking with convention, writing your own doctrine."],
+["The Lovers","♊","union, choice, alignment","A bond that matters, and a choice that shows what you value.","Disharmony, values out of line, or a choice you keep avoiding."],
+["The Chariot","♋","will, victory, direction","Drive opposing forces in one direction by resolve. The momentum is yours.","Losing the reins, force without direction, or aggression."],
+["Strength","♌","courage, gentleness, inner power","Quiet strength. The beast is tamed with patience, not force.","Self-doubt, raw feeling running the show, or power used harshly."],
+["The Hermit","♍","solitude, searching, inner light","Withdraw to find the answer. Carry your own lantern.","Isolation gone too far, or refusing the inner work."],
+["Wheel of Fortune","♃","cycles, fate, turning points","The wheel turns. Change is coming, and luck shifts with it.","Resisting change, a run of bad luck, or repeating an old cycle."],
+["Justice","♎","truth, fairness, cause and effect","Karma at work. The truth comes out and the scales balance.","Unfairness, dishonesty, or someone dodging accountability."],
+["The Hanged Man","🜄","surrender, pause, new perspective","Stop pushing. A pause and a different angle show what struggle can't.","Stalling, needless sacrifice, or refusing to see another view."],
+["Death","♏","endings, transformation, release","Something closes so something else can begin. Transformation, not a literal death.","Clinging to what is already over, or fear of the change."],
+["Temperance","♐","balance, patience, alchemy","Blend the opposites slowly. Moderation and healing over time.","Excess, imbalance, impatience."],
+["The Devil","♑","bondage, shadow, temptation","A chain you could slip if you chose. Look at what has its hold on you.","Breaking free, reclaiming power, facing the shadow."],
+["The Tower","♂","upheaval, revelation, collapse","Sudden change tears down what was built on false ground. The truth arrives like lightning.","Disaster narrowly avoided, or a collapse that is only being delayed."],
+["The Star","♒","hope, renewal, guidance","After the storm, quiet hope. Healing and a light to steer by.","Discouragement, lost faith, cut off from your own light."],
+["The Moon","♓","illusion, dreams, the unconscious","Not everything is what it seems. Move by instinct through the fog.","Confusion lifting, fears brought into view, a deception exposed."],
+["The Sun","☉","joy, clarity, success","Warmth, vitality, things seen clearly. A yes card.","Joy dimmed or delayed, or overconfidence."],
+["Judgement","🜂","awakening, reckoning, calling","A call you can't ignore. Rise, answer it, and see your past clearly.","Self-doubt, ignoring the call, judging yourself too harshly."],
+["The World","♄","completion, wholeness, arrival","A cycle completed. Integration and accomplishment.","Loose ends, a goal almost reached, closure still missing."]
+];
+const MIN={
+wands:[
+["spark, inspiration, new venture","A surge of creative fire. Begin.","Delays, false starts, energy with nowhere to go."],
+["planning, vision, decisions","The world in your hand. Plan the next move.","Fear of the unknown, playing it too safe."],
+["expansion, foresight, ships on the horizon","Your efforts are underway. Watch the horizon.","Setbacks, obstacles, impatience with the wait."],
+["celebration, home, harmony","A milestone worth marking. Home feels like home.","An unsettled home, transition, a celebration missed."],
+["conflict, competition, friction","Clashing wills. Spar if you must, but know what you are fighting for.","Avoiding conflict, or finally ending it."],
+["victory, recognition, pride","Public success. You have earned the laurel.","Ego, a fall from grace, recognition withheld."],
+["defense, perseverance, holding ground","Hold the high ground. You can defend this.","Overwhelm, giving up the fight."],
+["speed, movement, news","Things move fast now. Messages arrive.","Delays, frustration, waiting."],
+["resilience, the last stand, guardedness","Wounded but standing. One more push.","Exhaustion, or defenses raised too high."],
+["burden, responsibility, overload","Carrying too much. Success that has become weight.","Putting the load down, handing some of it off."],
+["enthusiasm, discovery, free spirit","News of a new passion. Curiosity leads.","Scattered ideas, no direction."],
+["action, adventure, impulse","Charge ahead with energy.","Haste, recklessness, burnout."],
+["confidence, warmth, determination","Magnetic, bold, and sure of herself.","Jealousy, insecurity, a demand for attention."],
+["vision, leadership, boldness","A visionary who turns fire into a plan.","Impulsiveness, domineering, expectations set too high."]],
+cups:[
+["new love, compassion, overflowing","The heart opens. Feeling pours in.","Blocked feelings, emptiness, self-love needed."],
+["partnership, union, attraction","Two hearts in exchange. A meaningful bond.","Imbalance, communication breaking down."],
+["friendship, community, joy","Gathering with those who love you.","Overindulgence, gossip, distance from friends."],
+["apathy, contemplation, a missed offer","Something is being offered while you look away.","Waking up, accepting what is offered."],
+["loss, grief, regret","Mourning what spilled. Two cups still stand behind you.","Acceptance, moving on, forgiveness."],
+["nostalgia, innocence, the past","Sweet memories, childhood, simple kindness.","Stuck in the past, or idealizing it."],
+["choices, illusion, fantasy","Many cups, many dreams. Not all of them are real.","Clarity, choosing, reality returns."],
+["walking away, searching, letting go","Leaving what no longer fills you.","Fear of leaving, or drifting without aim."],
+["wish fulfilled, contentment","The wish card. Satisfaction.","Smugness, or a wish still unmet."],
+["harmony, family, emotional fulfillment","Lasting happiness, home, belonging.","Discord at home, an ideal that cracked."],
+["a tender message, intuition, creative offer","A gentle message or an emotional beginning.","Emotional immaturity, blocked creativity."],
+["romance, charm, following the heart","A romantic offer, an idealist.","Moodiness, romance that isn't realistic."],
+["compassion, intuition, emotional depth","Deep feeling held with care.","Emotional overwhelm, losing yourself in others."],
+["emotional balance, diplomacy, calm","A steady heart and wise counsel.","Manipulation, moodiness, feelings pushed down."]],
+swords:[
+["breakthrough, clarity, truth","A cutting insight. The truth is clear.","Confusion, clouded judgment, words misused."],
+["stalemate, a hard choice, denial","Blindfolded between two options. Avoidance.","The indecision ends; information comes to light."],
+["heartbreak, grief, painful truth","Sorrow that has to be felt to heal.","Recovery, releasing the pain."],
+["rest, recovery, contemplation","Lay down your swords and rest.","Restlessness, burnout, rest forced on you."],
+["conflict, hollow victory, tension","A win that costs too much.","Reconciliation, making amends."],
+["transition, moving on, passage","Calmer water ahead. Leave the turbulence behind.","Unfinished business, resisting the move."],
+["deception, strategy, stealth","Someone moves in secret, or you need a strategy.","Coming clean, conscience, confession."],
+["restriction, self-limiting belief","The cage is weaker than it looks. You can walk out.","Release, a new perspective, freedom."],
+["anxiety, nightmares, worry","Night fears that grow in the dark.","Hope returns; the fears meet daylight."],
+["endings, rock bottom, betrayal","The worst is over. Dawn is on the horizon.","Recovery, refusing to let an ending finish you."],
+["curiosity, ideas, vigilance","New ideas and sharp questions.","Gossip, hasty words, all talk."],
+["ambition, haste, drive","Charging toward the goal with a sharp mind.","Rushing, carelessness, aggression."],
+["clarity, independence, honest judgment","Straight talk, clear boundaries, wisdom earned the hard way.","Coldness, bitterness, cruelty."],
+["intellect, authority, truth","Clear thought and fair judgment. The mind as guardian.","Manipulation, abuse of power, cold logic."]],
+pentacles:[
+["opportunity, prosperity, new ground","A seed of real-world opportunity.","A missed chance, poor planning."],
+["balance, adaptability, juggling","Keeping everything in motion.","Overwhelm, dropped balls."],
+["craft, teamwork, skill","Mastery recognized; building together.","Poor teamwork, sloppy work."],
+["security, holding on, control","Guarding what you have.","Greed, or finally loosening your grip."],
+["hardship, exclusion, worry","Hard times, but there is a lit window close by.","Recovery, help accepted."],
+["generosity, giving and receiving","A fair balance of giving and receiving.","Strings attached, one-sided generosity."],
+["patience, investment, assessment","Waiting on the harvest. Take stock of the growth.","Impatience, a poor return."],
+["diligence, craftsmanship, practice","Steady work at your craft.","Perfectionism, uninspired work."],
+["independence, luxury, self-sufficiency","Enjoying the fruits of your own work.","Overwork, hollow success."],
+["legacy, inheritance, family","Lasting wealth and heritage.","Disputes over money or inheritance, instability."],
+["study, ambition, a new skill","A practical beginning; the student.","Procrastination, little progress."],
+["hard work, routine, reliability","Slow and steady wins.","Stagnation, boredom."],
+["nurturing, practical, grounded","Care that keeps the home warm.","Self-neglect, work and home out of balance."],
+["abundance, security, discipline","Wealth built on discipline.","Greed, stubbornness."]]
+};
+const RANKS=["Ace","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Page","Knight","Queen","King"];
+const PIECES={Page:"♙",Knight:"♘",Queen:"♕",King:"♔"};
+const SUITS=[["wands","Wands","Fire"],["cups","Cups","Water"],["swords","Swords","Air"],["pentacles","Pentacles","Earth"]];
+const SVG={
+ wands:'<svg viewBox="0 0 16 48" aria-hidden="true"><path d="M8 3v42"/><path class="f" d="M8 13c-3-1-5-3-5-6 3 0 5 2 5 6zM8 23c3-1 5-3 5-6-3 0-5 2-5 6zM8 33c-3-1-5-3-5-6 3 0 5 2 5 6z"/></svg>',
+ cups:'<svg viewBox="0 0 24 36" aria-hidden="true"><path class="f" d="M3 3h18c0 9-3.5 13-9 13S3 12 3 3z"/><path d="M12 16v10M9 26h6M6 33c0-4 2.5-7 6-7s6 3 6 7z"/></svg>',
+ swords:'<svg viewBox="0 0 16 48" aria-hidden="true"><path class="f" d="M8 2l2.5 5v27h-5V7z"/><path d="M2 34h12M8 34v9M5.5 45h5"/></svg>',
+ pentacles:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="f" cx="12" cy="12" r="10.5"/><path d="M12 4L16.7 18.5L4.4 9.5H19.6L7.3 18.5Z"/></svg>'
+};
+const DECK=[];
+const DM=window.RT_DEEP_MAJ||[], DN=window.RT_DEEP_MIN||{}, DR=window.RT_DEEP_RUNES||[];
+MAJ.forEach((m,i)=>DECK.push({id:"maj"+String(i).padStart(2,"0"),name:m[0],arcana:"Major Arcana · "+ROMAN[i],num:ROMAN[i],glyph:m[1]+T,keys:m[2],up:m[3],rev:m[4],deep:DM[i]}));
+SUITS.forEach(([s,S,el])=>MIN[s].forEach((d,r)=>DECK.push({id:s+String(r+1).padStart(2,"0"),name:RANKS[r]+" of "+S,suit:s,rank:r+1,arcana:"Minor Arcana · "+S+" · "+el,keys:d[0],up:d[1],rev:d[2],deep:(DN[s]||[])[r]})));
+
+// Elder Futhark: glyph, name, gloss, upright, merkstave (null = cannot reverse), what to look at
+const RUNES=[
+["ᚠ","Fehu","cattle · wealth","Prosperity and earned reward. Energy you can spend.","Loss, greed, something slipping through your fingers.","what you value and what you are spending it on"],
+["ᚢ","Uruz","aurochs · strength","Raw strength and health. You are stronger than this.","Weakness, or force aimed the wrong way.","your stamina and your body"],
+["ᚦ","Thurisaz","thorn · defense","A protective force, or a reactive one. Think before striking.","Danger, malice, being left defenseless.","what needs a boundary"],
+["ᚨ","Ansuz","the god · the voice","Signals and messages. Listen to good counsel.","Miscommunication, manipulation, bad advice.","what is being said, and who is saying it"],
+["ᚱ","Raidho","riding · the journey","A journey, or the right rhythm. Things move in order.","Disruption, a wrong road, bad timing.","the road you are on and its timing"],
+["ᚲ","Kenaz","torch · illumination","Illumination and creative fire. You can see now.","Darkness, a spark gone out.","what the light reveals and what you are making"],
+["ᚷ","Gebo","gift · exchange","A gift, a partnership, a balanced exchange.",null,"what is being given and what is owed"],
+["ᚹ","Wunjo","joy · belonging","Joy, harmony, a sense of belonging.","Sorrow, alienation.","where joy actually lives for you"],
+["ᚺ","Hagalaz","hail · disruption","Disruption you can't control, clearing the ground.",null,"what is outside your control"],
+["ᚾ","Nauthiz","need · constraint","Need and restriction. Be patient; the friction teaches.",null,"what you truly need"],
+["ᛁ","Isa","ice · stillness","A freeze. Wait; nothing moves yet.",null,"what is on hold"],
+["ᛃ","Jera","year · harvest","Reward in its season. The harvest follows the turning year.",null,"patience and timing"],
+["ᛇ","Eihwaz","yew · endurance","Endurance through transformation. Rooted between worlds.",null,"what endures through the change"],
+["ᛈ","Perthro","the dice cup · mystery","The unknown, chance, a secret about to surface.","Stagnation, an unwelcome surprise.","what is still hidden"],
+["ᛉ","Algiz","elk-sedge · protection","Protection, a guardian, sanctuary.","Vulnerability, a hidden danger.","who and what is guarding you"],
+["ᛊ","Sowilo","sun · victory","Success and vitality. The light wins.",null,"where your strength shines"],
+["ᛏ","Tiwaz","Tyr · justice","Honor and justice. The fight worth fighting.","Imbalance, conflict, losing nerve.","what is fair, and what is worth defending"],
+["ᛒ","Berkano","birch · growth","New growth, nurture, renewal.","Stalled growth, worry at home.","what is being born or tended"],
+["ᛖ","Ehwaz","horse · partnership","Trust, teamwork, steady progress.","Distrust, restlessness.","your partnerships and who carries you"],
+["ᛗ","Mannaz","humankind · the self","The self among others. Know yourself.","Isolation, self-deception.","who you are and who stands with you"],
+["ᛚ","Laguz","water · intuition","Flow, intuition, dreams.","Confusion, fear, poor judgment.","what your intuition is telling you"],
+["ᛜ","Ingwaz","seed · gestation","An inner process completing. Rest before new growth.",null,"what is gestating"],
+["ᛞ","Dagaz","dawn · breakthrough","Daybreak. A breakthrough, and a turning toward the light.",null,"the turning point"],
+["ᛟ","Othala","homeland · heritage","Inheritance, ancestral home, what belongs to you.","Loss of home, rootlessness.","home, heritage, and what is yours"]
+];
+const WYRD=["","Wyrd","the blank rune · fate","The unknowable. Fate has not decided; the choice is still open.",null,"what is not yet written"];
+
+const SPREADS={
+ one:{label:"One card",pos:["The heart of it"]},
+ three:{label:"Past · Present · Future",pos:["Past","Present","Future"]},
+ cross:{label:"Celtic Cross",pos:["Present","Challenge","Foundation","Recent past","Crown","Near future","Self","Surroundings","Hopes and fears","Outcome"]}
+};
+const runeAt=i=>i===24?WYRD:RUNES[i];
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let fullOpen=LS.get("rt.fullOpen",true);
+
+// card back: double frame, corner flourishes, a ring of the twenty-four runes around Dagaz
+const BACK=(()=>{
+  const cx=150,cy=263;let ring="";
+  RUNES.forEach((r,i)=>{ring+=`<text class="ring" x="${cx}" y="${cy-88}" text-anchor="middle" dominant-baseline="central" transform="rotate(${i*15} ${cx} ${cy})">${r[0]}</text>`});
+  const corner=`<path class="ln2" d="M26 64Q26 26 64 26"/><path class="ln2" d="M33 80Q33 33 80 33"/><path class="fl" d="M31 31l5-5 5 5-5 5z"/><circle class="fl" cx="68" cy="26" r="1.8"/><circle class="fl" cx="26" cy="68" r="1.8"/><circle class="fl" cx="84" cy="33" r="1.2"/><circle class="fl" cx="33" cy="84" r="1.2"/>`;
+  const sp=(x,y,s)=>`<path class="spark" d="M${x} ${y-s}Q${x} ${y} ${x+s} ${y}Q${x} ${y} ${x} ${y+s}Q${x} ${y} ${x-s} ${y}Q${x} ${y} ${x} ${y-s}Z"/>`;
+  return `<svg viewBox="0 0 300 527" aria-hidden="true">
+    <rect class="ln" x="10" y="10" width="280" height="507" rx="14"/>
+    <rect class="ln2" x="18" y="18" width="264" height="491" rx="9"/>
+    ${corner}<g transform="translate(300 0) scale(-1 1)">${corner}</g><g transform="translate(0 527) scale(1 -1)">${corner}</g><g transform="translate(300 527) scale(-1 -1)">${corner}</g>
+    <circle class="ln" cx="${cx}" cy="${cy}" r="100"/><circle class="ln2" cx="${cx}" cy="${cy}" r="76"/>${ring}
+    <text class="dagaz" x="${cx}" y="${cy+3}" text-anchor="middle" dominant-baseline="central">ᛞ</text>
+    <path class="ln2" d="M150 62V146M150 380V465M42 263H50M250 263H258"/>
+    <path class="fl" d="M150 44l6 8-6 8-6-8zM150 467l6 8-6 8-6-8zM150 150l3 5-3 5-3-5zM150 367l3 5-3 5-3-5z"/>
+    ${sp(72,118,7)}${sp(228,118,7)}${sp(72,408,7)}${sp(228,408,7)}${sp(104,78,3.5)}${sp(196,78,3.5)}${sp(104,449,3.5)}${sp(196,449,3.5)}${sp(36,263,4)}${sp(264,263,4)}
+  </svg>`;
+})();
+
+let S={id:0,spread:"three",question:"",cards:[],sel:-1};
+let justCast=-1;
+
+function frontHTML(c){
+  if(IMAGE_DIR) return `<div class="inner img"><img src="${imgSrc(c.id)}" alt="${esc(c.name)}" draggable="false"></div>`;
+  let art;
+  if(!c.suit) art=`<div class="glyph">${c.glyph}</div>`;
+  else if(c.rank>10) art=`<div class="court"><div class="piece">${PIECES[RANKS[c.rank-1]]}${T}</div><div class="suit">${SVG[c.suit]}</div></div>`;
+  else if(c.rank===1) art=`<div class="suit ace">${SVG[c.suit]}</div>`;
+  else{
+    const n=c.rank, tall=c.suit==="wands"||c.suit==="swords";
+    const cols=tall?(n<=4?n:n<=8?4:5):(n<=3?1:n<=8?2:3), rows=Math.ceil(n/cols);
+    art=`<div class="pips suit" style="--cols:${cols};--rows:${rows}">${('<div class="pip">'+SVG[c.suit]+'</div>').repeat(n)}</div>`;
+  }
+  const top=c.suit?(c.rank===1?"Ace":c.rank>10?RANKS[c.rank-1]:ROMAN[c.rank]):c.num;
+  return `<div class="inner"><div class="num">${top}</div><div class="art">${art}</div><div class="name">${c.name}</div></div>`;
+}
+function miniHTML(st){
+  if(!st.rune) return "";
+  const r=runeAt(st.rune.i);
+  return `<span class="${st.rune.merk?"merk":""}" title="${r[1]}"><b>${r[0]}</b></span>`;
+}
+
+function renderSpread(){
+  const sp=$("#spread"), def=SPREADS[S.spread];
+  sp.className="spread "+S.spread;
+  $("#spreadTitle").textContent=def.label;
+  $("#asked").textContent=S.question?("“"+S.question+"”"):"";
+  sp.innerHTML=S.cards.map((st,i)=>{
+    const c=DECK[st.c];
+    return `<button type="button" class="slot p${i+1}${i===S.sel?" sel":""}" data-i="${i}" aria-label="${esc(def.pos[i])}: ${st.up?esc(c.name)+(st.rev?", reversed":""):"face down"}">
+      <span class="pos">${def.pos[i]}</span>
+      <span class="card${st.up?" up":""}${st.rev?" rev":""}"><span class="flip">
+        <span class="face back">${BACK}</span>
+        <span class="face front">${frontHTML(c)}</span>
+      </span></span>
+      <span class="mini">${miniHTML(st)}</span>
+    </button>`;
+  }).join("");
+}
+function updateSlot(i){
+  const el=document.querySelector(`.slot[data-i="${i}"]`); if(!el) return;
+  const st=S.cards[i], c=DECK[st.c];
+  el.querySelector(".card").classList.toggle("up",st.up);
+  el.querySelector(".mini").innerHTML=miniHTML(st);
+  el.setAttribute("aria-label",`${SPREADS[S.spread].pos[i]}: ${st.up?c.name+(st.rev?", reversed":""):"face down"}`);
+}
+function markSel(){document.querySelectorAll(".slot").forEach(el=>el.classList.toggle("sel",+el.dataset.i===S.sel))}
+
+function renderDetail(){
+  const d=$("#detail");
+  if(S.sel<0){
+    const anyUp=S.cards.some(x=>x.up);
+    d.innerHTML=`<p class="eyebrow">THE READING</p><h2 class="dt">${anyUp?"Choose a card":"Turn a card"}</h2>
+      <p class="muted">Tap a card to turn it over. Tap a turned card to read it, then cast a rune to narrow what it is telling you.</p>`;
+    return;
+  }
+  const st=S.cards[S.sel], c=DECK[st.c], pos=SPREADS[S.spread].pos[S.sel];
+  let rb;
+  if(st.rune){
+    const r=runeAt(st.rune.i), merk=st.rune.merk, rd=DR[st.rune.i];
+    const rfull=rd?`<details class="fullread"${fullOpen?" open":""}><summary>THE RUNE IN FULL</summary>
+        <p class="lead">${merk&&rd[1]?rd[1]:rd[0]}</p>${merk?`<p><b>Upright:</b> ${rd[0]}</p>`:(rd[1]?`<p>${rd[1]}</p>`:"")}</details>`:"";
+    rb=`<div class="rune-row"><div class="stone${merk?" merk":""}${justCast===S.sel?" cast-in":""}"><b>${r[0]}</b></div>
+        <div><p class="eyebrow">CLARIFYING RUNE</p><h3>${r[1]} ${merk?"<small>merkstave</small>":""}</h3><p class="rw">${r[2]}</p></div></div>
+        <p class="rtext">${merk?r[4]:r[3]}</p>${rfull}
+        <p class="focus">With ${c.name}${st.rev?" reversed":""}, look at ${r[5]}.</p>
+        <button type="button" class="ghost" id="recast" style="align-self:flex-start">Cast again</button>`;
+  } else {
+    rb=`<button type="button" class="cast" id="castBtn"><i aria-hidden="true">ᚱ</i> Cast a rune to clarify</button>`;
+  }
+  d.innerHTML=`<div class="dimg${st.rev?" rev":""}"><img src="${imgSrc(c.id)}" alt=""><div>
+    <p class="eyebrow">${esc(pos).toUpperCase()} · ${st.rev?"REVERSED":"UPRIGHT"}</p>
+    <h2 class="dt">${c.name}</h2><p class="arc">${c.arcana}</p>
+    <p class="keys">${c.keys}</p></div></div>
+    <p class="mean">${st.rev?c.rev:c.up}</p>
+    <p class="alt"><span>${st.rev?"Upright":"Reversed"}:</span> ${st.rev?c.up:c.rev}</p>
+    ${c.deep?`<details class="fullread"${fullOpen?" open":""}><summary>THE FULLER READING</summary>
+      <p class="lead">${c.deep[st.rev?1:0]}</p><p>${st.rev?"<b>Upright, in full:</b> ":""}${c.deep[st.rev?0:1]}</p></details>`:""}
+    <div class="runebox">${rb}</div>`;
+  justCast=-1;
+}
+
+function shuffleDraw(n){
+  const a=DECK.map((_,i)=>i);
+  for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}
+  return a.slice(0,n);
+}
+function draw(){
+  const spread=document.querySelector('input[name="spread"]:checked').value;
+  const rev=$("#optRev").checked;
+  S={id:Date.now(),spread,question:$("#question").value.trim(),notes:"",
+     cards:shuffleDraw(SPREADS[spread].pos.length).map(i=>({c:i,rev:rev&&rnd(2)===1,up:false,rune:null})),sel:-1};
+  $("#notes").value="";$("#savedMsg").textContent="";
+  renderSpread();renderDetail();
+}
+function castFor(i){
+  const pool=$("#optWyrd").checked?25:24, k=rnd(pool), r=runeAt(k);
+  S.cards[i].rune={i:k,merk:$("#optMerk").checked&&!!r[4]&&rnd(2)===1};
+  justCast=i; updateSlot(i); renderDetail(); save();
+}
+
+$("#spread").addEventListener("click",e=>{
+  const el=e.target.closest(".slot"); if(!el) return;
+  const i=+el.dataset.i, st=S.cards[i], wasUp=st.up;
+  if(!st.up){st.up=true;updateSlot(i);save()}
+  S.sel=i; markSel(); renderDetail();
+  if(wasUp&&innerWidth<1000) $("#detail").scrollIntoView({behavior:"smooth",block:"start"});
+});
+$("#detail").addEventListener("click",e=>{
+  if(e.target.closest("#castBtn")||e.target.closest("#recast")) castFor(S.sel);
+});
+$("#turnAll").addEventListener("click",()=>{
+  let delay=0;
+  S.cards.forEach((st,i)=>{ if(!st.up){ setTimeout(()=>{st.up=true;updateSlot(i)},delay); delay+=140; } });
+  setTimeout(()=>{ if(S.sel<0&&S.cards.length){S.sel=0;markSel()} renderDetail(); save(); },delay+20);
+});
+$("#controls").addEventListener("submit",e=>{e.preventDefault();draw()});
+
+$("#detail").addEventListener("toggle",e=>{if(e.target.matches("details.fullread")){fullOpen=e.target.open;LS.set("rt.fullOpen",fullOpen)}},true);
+
+// journal (kept on this device)
+const KEY="runetarot.history.v1";
+const loadH=()=>LS.get(KEY,[])||[];
+const storeH=h=>LS.set(KEY,h.slice(0,300));
+let savedTimer;
+function save(){
+  if(!S.cards.some(x=>x.up)&&!S.notes) return;
+  const h=loadH(), old=h.find(x=>x.id===S.id);
+  const entry={id:S.id,spread:S.spread,question:S.question,notes:S.notes||"",cards:S.cards.map(x=>({c:x.c,rev:x.rev,up:x.up,rune:x.rune}))};
+  storeH([entry,...h.filter(x=>x.id!==S.id)]);
+  if(!old||old.notes!==entry.notes){$("#savedMsg").textContent="Saved to your journal.";clearTimeout(savedTimer);savedTimer=setTimeout(()=>$("#savedMsg").textContent="",2500)}
+  if(!$("#journal").hidden) renderJournal();
+}
+function updateEntry(id,patch){
+  const h=loadH(), e=h.find(x=>x.id===id); if(!e) return;
+  Object.assign(e,patch); storeH(h);
+  if(id===S.id){Object.assign(S,patch); if("notes" in patch) $("#notes").value=S.notes; if("question" in patch){$("#question").value=S.question;$("#asked").textContent=S.question?("“"+S.question+"”"):""}}
+}
+function whenOf(id){const d=new Date(id);return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"})+" · "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}
+function renderJournal(){
+  const h=loadH(), ol=$("#jlist");
+  $("#jCount").textContent=h.length?(h.length+(h.length===1?" reading":" readings")):"";
+  $("#clearHist").hidden=!h.length;
+  if(!h.length){ol.innerHTML=`<li class="empty">Readings you turn over are kept here, on this device. You can rename a reading, add notes, open it again, or delete it.</li>`;return}
+  ol.innerHTML=h.map(x=>{
+    const cards=x.cards.filter(c=>c.up).map((c,i)=>{
+      const r=c.rune?` <span class="r" title="${runeAt(c.rune.i)[1]}${c.rune.merk?" (merkstave)":""}">${runeAt(c.rune.i)[0]||"◯"}</span>`:"";
+      return esc(DECK[c.c].name)+(c.rev?" (rev.)":"")+r;
+    }).join(" · ")||"<span class='muted'>No cards turned yet</span>";
+    return `<li class="jentry${x.id===S.id?" current":""}" data-id="${x.id}">
+      <div class="jdate"><span>${whenOf(x.id)}</span><span>${SPREADS[x.spread].label}</span></div>
+      <input type="text" class="jq" value="${esc(x.question||"")}" placeholder="Untitled reading" aria-label="Reading title or question">
+      <p class="jcards">${cards}</p>
+      <textarea class="jn" rows="2" placeholder="Notes" aria-label="Notes">${esc(x.notes||"")}</textarea>
+      <div class="jactions"><button type="button" class="ghost" data-act="open">Open reading</button><button type="button" class="ghost danger" data-act="del">Delete</button></div>
+    </li>`;
+  }).join("");
+}
+function openReading(x){
+  S={id:x.id,spread:x.spread,question:x.question||"",notes:x.notes||"",cards:x.cards.map(c=>({...c})),sel:-1};
+  const r=document.getElementById("sp-"+x.spread); if(r) r.checked=true;
+  $("#question").value=S.question; $("#notes").value=S.notes; $("#savedMsg").textContent="";
+  renderSpread();renderDetail();
+}
+function openJournal(){renderJournal();$("#scrim").hidden=false;$("#journal").hidden=false;$("#jClose").focus()}
+function closeJournal(){$("#scrim").hidden=true;$("#journal").hidden=true;$("#journalBtn").focus()}
+$("#journalBtn").addEventListener("click",openJournal);
+$("#jClose").addEventListener("click",closeJournal);
+$("#scrim").addEventListener("click",closeJournal);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#journal").hidden)closeJournal()});
+$("#jlist").addEventListener("input",e=>{
+  const li=e.target.closest(".jentry"); if(!li) return; const id=+li.dataset.id;
+  if(e.target.matches(".jq")) updateEntry(id,{question:e.target.value});
+  if(e.target.matches(".jn")) updateEntry(id,{notes:e.target.value});
+});
+$("#jlist").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-act]"); if(!b) return;
+  const id=+b.closest(".jentry").dataset.id;
+  if(b.dataset.act==="open"){const x=loadH().find(r=>r.id===id); if(x){openReading(x);closeJournal()}}
+  if(b.dataset.act==="del"){
+    if(b.dataset.armed!=="1"){b.dataset.armed="1";b.textContent="Delete for good?";setTimeout(()=>{if(b.isConnected){b.dataset.armed="";b.textContent="Delete"}},3500);return}
+    storeH(loadH().filter(x=>x.id!==id)); renderJournal();
+  }
+});
+let clearArmed=false;
+$("#clearHist").addEventListener("click",e=>{
+  if(!clearArmed){clearArmed=true;e.target.textContent="Clear every reading?";setTimeout(()=>{clearArmed=false;e.target.textContent="Clear all"},3500);return}
+  storeH([]);clearArmed=false;e.target.textContent="Clear all";renderJournal();
+});
+$("#notes").addEventListener("input",e=>{S.notes=e.target.value;clearTimeout(save.t);save.t=setTimeout(save,500)});
+$("#question").addEventListener("change",e=>{if(loadH().some(x=>x.id===S.id))updateEntry(S.id,{question:e.target.value.trim()})});
+
+// hearth: a crackling fire made in the browser, off until you turn it on
+const Fire={ctx:null,master:null,on:false,timer:null,pop:null,
+  build(){
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+    const ctx=this.ctx=new AC(), sr=ctx.sampleRate;
+    this.master=ctx.createGain(); this.master.gain.value=0; this.master.connect(ctx.destination);
+    const len=sr*8, b=ctx.createBuffer(1,len,sr), d=b.getChannelData(0); let last=0;
+    for(let i=0;i<len;i++){const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.2}
+    const fade=sr*.5; for(let i=0;i<fade;i++){const k=i/fade; d[i]=d[i]*k+d[len-fade+i]*(1-k)}
+    const src=ctx.createBufferSource(); src.buffer=b; src.loop=true; src.loopEnd=(len-fade)/sr;
+    const lp=ctx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=360;
+    const g=ctx.createGain(); g.gain.value=.55; src.connect(lp).connect(g).connect(this.master); src.start();
+    const lfo=ctx.createOscillator(); lfo.frequency.value=.21; const lg=ctx.createGain(); lg.gain.value=.16; lfo.connect(lg).connect(g.gain); lfo.start();
+    const hb=ctx.createBuffer(1,sr*3,sr), hd=hb.getChannelData(0); for(let i=0;i<hd.length;i++) hd[i]=Math.random()*2-1;
+    const hs=ctx.createBufferSource(); hs.buffer=hb; hs.loop=true;
+    const bp=ctx.createBiquadFilter(); bp.type="bandpass"; bp.frequency.value=2400; bp.Q.value=.5;
+    const hg=ctx.createGain(); hg.gain.value=.022; hs.connect(bp).connect(hg).connect(this.master); hs.start();
+    const pl=Math.floor(sr*.035), pb=ctx.createBuffer(1,pl,sr), pd=pb.getChannelData(0);
+    for(let i=0;i<pl;i++) pd[i]=(Math.random()*2-1)*Math.pow(1-i/pl,7);
+    this.pop=pb; return true;
+  },
+  crack(){
+    const ctx=this.ctx, s=ctx.createBufferSource(); s.buffer=this.pop; s.playbackRate.value=.35+Math.random()*1.7;
+    const f=ctx.createBiquadFilter(); f.type="highpass"; f.frequency.value=700+Math.random()*3200;
+    const g=ctx.createGain(); g.gain.value=(.12+Math.random()*.55)*(Math.random()<.07?2.2:1);
+    s.connect(f).connect(g).connect(this.master); s.start();
+  },
+  loop(){
+    clearTimeout(this.timer); if(!this.on) return;
+    this.crack();
+    if(Math.random()<.3){const n=1+rnd(4); for(let k=0;k<n;k++) setTimeout(()=>{if(this.on)this.crack()},15+Math.random()*90)}
+    this.timer=setTimeout(()=>this.loop(),60+Math.random()*(Math.random()<.2?900:280));
+  },
+  vol(){ if(this.master) this.master.gain.setTargetAtTime(this.on?(+$("#fireVol").value/100)*.9:0,this.ctx.currentTime,.25) },
+  start(){ if(!this.ctx&&!this.build()) return false; this.ctx.resume(); this.on=true; this.vol(); this.loop(); return true },
+  stop(){ this.on=false; clearTimeout(this.timer); this.vol(); setTimeout(()=>{if(!this.on&&this.ctx)this.ctx.suspend()},1200) }
+};
+$("#fireVol").value=LS.get("rt.fireVol",55);
+$("#fireBtn").addEventListener("click",()=>{
+  const b=$("#fireBtn");
+  if(Fire.on){Fire.stop();b.setAttribute("aria-pressed","false");$("#fireLabel").textContent="Hearth off"}
+  else if(Fire.start()){b.setAttribute("aria-pressed","true");$("#fireLabel").textContent="Hearth on"}
+});
+$("#fireVol").addEventListener("input",e=>{LS.set("rt.fireVol",+e.target.value);Fire.vol()});
+window.__rtPause=()=>{if(Fire.on)$("#fireBtn").click()};
+
+// the sky
+(function(){
+  const c=$("#sky"), x=c.getContext("2d"), still=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let st=[],W=0,H=0;
+  function size(){
+    const dpr=Math.min(2,window.devicePixelRatio||1); W=innerWidth; H=innerHeight;
+    c.width=W*dpr; c.height=H*dpr; x.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.round(W*H/4800); st=[];
+    for(let i=0;i<n;i++){const big=Math.random()<.07;st.push({x:Math.random()*W,y:Math.random()*H,r:big?1.1+Math.random()*1.1:.25+Math.random()*.85,a:.25+Math.random()*.6,p:Math.random()*6.283,s:.3+Math.random()*1.5,warm:Math.random()<.14})}
+  }
+  function frame(t){
+    x.clearRect(0,0,W,H);
+    for(const s of st){
+      const tw=still?1:.6+.4*Math.sin(t/1000*s.s+s.p);
+      x.globalAlpha=s.a*tw; x.fillStyle=s.warm?"#f0dcae":"#e8e4f6";
+      x.beginPath(); x.arc(s.x,s.y,s.r,0,6.283); x.fill();
+      if(s.r>1.3){x.globalAlpha*=.3; x.fillRect(s.x-s.r*3.5,s.y-.3,s.r*7,.6); x.fillRect(s.x-.3,s.y-s.r*3.5,.6,s.r*7)}
+    }
+    if(!still) requestAnimationFrame(frame);
+  }
+  size(); addEventListener("resize",()=>{size(); if(still) frame(0)}); requestAnimationFrame(frame);
+})();
+
+draw();
+})();
+</script>
+
+</body>
+</html>
